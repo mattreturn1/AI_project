@@ -6,14 +6,15 @@ import logging
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Main function that sort the needed files
-def process_csv(file_path, source):
+def process_csv(file_path, source='abide'):
+    """
+    Processes a CSV file to organize fMRI files by age group and diagnostic group.
+    """
     try:
-        # Load the data in a DataFrame
         df = pd.read_csv(file_path)
-        logging.info(f"Caricato CSV: {file_path}")
+        logging.info(f"Loaded CSV: {file_path}")
 
-        # Filter the string containing fMRI and divide control and patient
+        # Filter only fMRI entries
         df = df[df['Modality'] == 'fMRI']
         df_control = df[df['Group'] == 'Control']
         df_patient = df[df['Group'] != 'Control']
@@ -24,13 +25,9 @@ def process_csv(file_path, source):
                 continue
             file = search_files_in_folder(folder)
 
-            if source == 'abide':
-                age_group = get_age_group_abide(row['Age'])
-            else:
-                age_group = get_age_group_ppmi(row['Age'])
-
+            age_group = get_age_group_abide(row['Age'])
             if file:
-                move_file_from_to(str(folder), f"dataset/{source}/" + age_group + "/control", file.name)
+                move_file_from_to(str(folder), f"dataset/{source}/{age_group}/control", file.name)
 
         for _, row in df_patient.iterrows():
             folder = find_folder_by_substring(str(row['Subject']), source)
@@ -38,33 +35,25 @@ def process_csv(file_path, source):
                 continue
             file = search_files_in_folder(folder)
 
-            if source == 'abide':
-                age_group = get_age_group_abide(row['Age'])
-            else:
-                age_group = get_age_group_ppmi(row['Age'])
-
-            if file and source == "abide":
-                move_file_from_to(str(folder), f"dataset/{source}/" + age_group + "/patient", file.name)
-            elif file and source == "ppmi":
-                if row["Group"] == "PD":
-                    move_file_from_to(str(folder), f"dataset/{source}/" + age_group + "/pd", file.name)
-                elif row["Group"] == "Prodromal":
-                    move_file_from_to(str(folder), f"dataset/{source}/" + age_group + "/prodromal", file.name)
-                elif row["Group"] == "SWEDD":
-                    move_file_from_to(str(folder), f"dataset/{source}/" + age_group + "/swedd", file.name)
+            age_group = get_age_group_abide(row['Age'])
+            if file:
+                move_file_from_to(str(folder), f"dataset/{source}/{age_group}/patient", file.name)
 
     except Exception as exc:
-        logging.error(f"Error during the process of CSV file '{file_path}': {exc}")
+        logging.error(f"Error processing CSV file '{file_path}': {exc}")
 
-# Move a specific file from a folder to another one
 def move_file_from_to(source_folder, destination_folder, filename):
+    """
+    Moves a file from the source folder to the destination folder.
+    Creates the destination folder if it doesn't exist.
+    """
     if not isinstance(filename, str) or not isinstance(source_folder, str):
         logging.warning("The parameters are not strings.")
         return
 
     source_file = Path(source_folder) / filename
     if not source_file.exists():
-        logging.warning(f"File '{filename}' not found in the directory '{source_folder}'.")
+        logging.warning(f"File '{filename}' not found in directory '{source_folder}'.")
         return
 
     destination_folder = Path(destination_folder)
@@ -73,31 +62,37 @@ def move_file_from_to(source_folder, destination_folder, filename):
 
     try:
         shutil.move(str(source_file), str(destination_file))
-        logging.info(f"File '{filename}' move to '{destination_folder}'.")
+        logging.info(f"Moved '{filename}' to '{destination_folder}'.")
     except Exception as exc:
-        logging.error(f"Error during the repositioning of file '{filename}': {exc}")
+        logging.error(f"Error moving file '{filename}': {exc}")
 
-# Search a specific folder using a subtring
 def find_folder_by_substring(substring, source):
+    """
+    Searches for a folder under the source directory that contains the given substring.
+    """
     try:
         source_path = Path(source)
         for item in source_path.iterdir():
             if item.is_dir() and substring in item.name:
                 return item
-        logging.warning(f"Directory with substring '{substring}' not found in '{source}'.")
+        logging.warning(f"Folder with substring '{substring}' not found in '{source}'.")
     except Exception as exc:
-        logging.error(f"Error during the searching of the directory: {exc}")
+        logging.error(f"Error searching for folder: {exc}")
 
-# Search a specific file inside a folder using a subtring
 def search_files_in_folder(folder_path):
+    """
+    Recursively searches for a file containing 'AAL116_correlation_matrix' in the folder.
+    """
     folder_path = Path(folder_path)
     for file in folder_path.rglob('*'):
         if 'AAL116_correlation_matrix' in file.name:
             return file
     logging.warning(f"File with substring 'AAL116_correlation_matrix' not found in '{folder_path}'.")
 
-# Help function to filter the groups by age for ABIDE
 def get_age_group_abide(age):
+    """
+    Determines age group for ABIDE dataset.
+    """
     if age < 12:
         return '11-'
     elif age < 18:
@@ -106,12 +101,3 @@ def get_age_group_abide(age):
         return '18_25'
     else:
         return '25+'
-
-# Help function to filter the groups by age for PPMI
-def get_age_group_ppmi(age):
-    if age < 61:
-        return '60-'
-    elif age < 71:
-        return '60_70'
-    else:
-        return '70+'

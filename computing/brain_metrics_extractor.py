@@ -3,78 +3,10 @@ from pathlib import Path
 import logging
 import numpy as np
 import pandas as pd
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-
-def extract_metrics(input_directory_path, output_directory_path):
-    """
-    Extract global and node-level metrics from brain network files in a directory.
-    """
-    input_directory = Path(input_directory_path)
-    output_directory = Path(output_directory_path)
-
-    if not input_directory.exists() or not input_directory.is_dir():
-        logging.error(f"Directory {input_directory_path} does not exist or is not a directory.")
-
-    mat_files = list(input_directory.glob("*.mat"))
-    if not mat_files:
-        logging.warning(f"No .mat files found in directory {input_directory_path}.")
-
-    graph_metrics, node_metrics = initialize_metrics()
-
-    for file in mat_files:
-        process_file(file, graph_metrics, node_metrics)
-
-    save_results(graph_metrics, node_metrics, output_directory)
-
-
-def initialize_metrics():
-    """
-    Initialize containers for graph and node metrics.
-    """
-    graph_metrics = {
-        "closeness": [],
-        "clustering": [],
-        "degree": []
-    }
-
-    node_metrics = {
-        "closeness": [[] for _ in range(116)],
-        "clustering": [[] for _ in range(116)],
-        "degree": [[] for _ in range(116)]
-    }
-
-    return graph_metrics, node_metrics
-
-
-def process_file(file, graph_metrics, node_metrics):
-    """
-    Process a single file to compute metrics and update the metrics containers.
-    """
-    try:
-        logging.info(f"Processing file: {file.parent}/{file.name}")
-        brain_network = from_matrix_to_network(file)
-
-        closeness_centrality = metrics_computator.compute_closeness_centrality(brain_network)
-        clustering_coefficient = metrics_computator.compute_clustering_coefficients(brain_network)
-        degree_centrality = metrics_computator.compute_degree_centrality(brain_network)
-
-        # Aggregate global metrics
-        graph_metrics["closeness"].append(np.mean(list(closeness_centrality.values())))
-        graph_metrics["clustering"].append(np.mean(list(clustering_coefficient.values())))
-        graph_metrics["degree"].append(np.mean(list(degree_centrality.values())))
-
-        # Aggregate node-level metrics
-        for i, node in enumerate(brain_network.nodes):
-            node_metrics["closeness"][i].append(closeness_centrality[node])
-            node_metrics["clustering"][i].append(clustering_coefficient[node])
-            node_metrics["degree"][i].append(degree_centrality[node])
-
-    except Exception as exc:
-        logging.error(f"Error processing file {file.parent}/{file.name}: {exc}")
-
 
 def from_matrix_to_network(file_path):
     """
@@ -87,132 +19,6 @@ def from_matrix_to_network(file_path):
         logging.error(f"Error converting matrix to network for file {file_path}: {exc}")
         raise
 
-
-def save_results(graph_metrics, node_metrics, directory):
-    """
-    Save metrics and statistics to CSV files.
-    """
-    create_directory(directory / "metrics")
-    create_directory(directory / "stats")
-
-    save_graph_metrics(graph_metrics, directory / "metrics" / "graph_metrics.csv")
-    save_node_metrics(node_metrics, directory / "metrics" / "node_metrics.csv")
-
-    graph_statistics = compute_graph_statistics(graph_metrics)
-    node_statistics = compute_node_statistics(node_metrics)
-
-    save_graph_statistics(graph_statistics, directory / "stats" / "graph_statistics.csv")
-    save_node_statistics(node_statistics, directory / "stats" / "node_statistics.csv")
-
-
-def save_graph_metrics(graph_metrics, output_file):
-    """
-    Save graph metrics to a CSV file.
-    """
-    #create_directory(output_file)
-
-    data = []
-    for graph in range(len(graph_metrics["closeness"])):
-        data.append({
-            "Graph": graph + 1,
-            "Closeness": graph_metrics["closeness"][graph],
-            "Clustering": graph_metrics["clustering"][graph],
-            "Degree": graph_metrics["degree"][graph]
-        })
-
-    df = pd.DataFrame(data)
-    df.to_csv(output_file, index=False)
-
-
-def save_node_metrics(node_metrics, output_file):
-    """
-    Save node-level metrics to a CSV file.
-    """
-    #create_directory(output_file)
-
-    data = []
-    for node in range(116):
-        for graph in range(len(node_metrics["closeness"][node])):
-            data.append({
-                "Node": node + 1,
-                "Graph": graph + 1,
-                "Closeness": node_metrics["closeness"][node][graph],
-                "Clustering": node_metrics["clustering"][node][graph],
-                "Degree": node_metrics["degree"][node][graph]
-            })
-
-    df = pd.DataFrame(data)
-    df.to_csv(output_file, index=False)
-
-
-def compute_graph_statistics(graph_metrics):
-    """
-    Compute statistics (mean, median, std) for global metrics.
-    """
-    return {
-        metric: {
-            "mean": np.mean(values),
-            "median": np.median(values),
-            "std": np.std(values)
-        }
-        for metric, values in graph_metrics.items()
-    }
-
-
-def compute_node_statistics(node_metrics):
-    """
-    Compute statistics (mean, median, std) for node-level metrics.
-    """
-    return {
-        metric: {
-            "mean": [np.mean(values) for values in node_metrics[metric]],
-            "median": [np.median(values) for values in node_metrics[metric]],
-            "std": [np.std(values) for values in node_metrics[metric]]
-        }
-        for metric in node_metrics
-    }
-
-
-def save_graph_statistics(graph_statistics, output_file):
-    """
-    Save graph statistics to a CSV file.
-    """
-    #create_directory(output_file)
-
-    data = []
-    for metric in graph_statistics.keys():
-        data.append({
-            "Metric": metric,
-            "Mean": graph_statistics[metric]["mean"],
-            "Median": graph_statistics[metric]["median"],
-            "Standard Deviation": graph_statistics[metric]["std"]
-        })
-
-    df = pd.DataFrame(data)
-    df.to_csv(output_file, index=False)
-
-
-def save_node_statistics(node_statistics, output_file):
-    """
-    Save node-level statistics to a CSV file.
-    """
-    #create_directory(output_file)
-
-    data = []
-    for node in range(116):
-        for metric in node_statistics.keys():
-            data.append({
-                "Node": node + 1,
-                "Metric": metric,
-                "Mean": node_statistics[metric]["mean"][node],
-                "Median": node_statistics[metric]["median"][node],
-                "Standard Deviation": node_statistics[metric]["std"][node]
-            })
-
-    df = pd.DataFrame(data)
-    df.to_csv(output_file, index=False)
-
-
 def create_directory(directory_path):
     """
     Ensure the directory for the given file path exists.
@@ -221,3 +27,134 @@ def create_directory(directory_path):
     directory = Path(directory_path)
     directory.mkdir(parents=True, exist_ok=True)
     logging.info(f"Directory {directory_path} created.")
+
+
+class BrainMetricsExtractor:
+    """
+    Extracts region-level brain network metrics from .mat files and saves them to disk.
+    """
+    def __init__(self, input_dir, output_dir, roi_file):
+        self.input_directory = Path(input_dir)
+        self.output_directory = Path(output_dir)
+        self.roi = self.load_roi(roi_file)
+        self.abide_roi_metrics = self.initialize_abide_roi_metrics()
+
+    def load_roi(self, roi_file):
+        """
+        Load the ROI definition from a JSON file.
+
+        Parameters:
+            roi_file (str or Path): Path to the JSON file containing ROI definitions.
+
+        Returns:
+            dict: A dictionary mapping region names to lists of subregion dictionaries.
+        """
+        roi_path = Path(roi_file)
+        if not roi_path.exists():
+            logging.error(f"ROI file {roi_file} not found.")
+            raise FileNotFoundError(f"ROI file '{roi_file}' does not exist.")
+
+        try:
+            with open(roi_path, 'r') as file:
+                roi_data = json.load(file)
+
+            if not isinstance(roi_data, dict):
+                logging.error("Invalid ROI file format. Expected a JSON object at the top level.")
+                raise ValueError("Invalid ROI file format.")
+
+            return roi_data
+
+        except json.JSONDecodeError as exc:
+            logging.error(f"Error decoding JSON file {roi_file}: {exc}")
+            raise
+
+    def initialize_abide_roi_metrics(self):
+        """
+        Initialize an empty list for each metric under each region name.
+        """
+        abide_roi_metrics = {}
+        for region in self.roi:
+            abide_roi_metrics[region] = {
+                "closeness": [],
+                "clustering": [],
+                "degree": []
+            }
+
+        return abide_roi_metrics
+
+    def extract_metrics(self):
+        """
+        Compute graph metrics for each subject and aggregate them by ROI.
+        """
+        logging.info("Computing graph metrics for each subject...")
+
+        if not self.input_directory.exists() or not self.input_directory.is_dir():
+            logging.error(f"Directory {self.input_directory} does not exist or is not a directory.")
+
+        mat_files = list(self.input_directory.glob("*.mat"))
+        if not mat_files:
+            logging.warning(f"No .mat files found in directory {self.input_directory}.")
+
+        for file in mat_files:
+            self.process_file(file)
+
+        self.save_results()
+
+    def process_file(self, file):
+        """
+        Process a single file to compute metrics and update the metrics containers.
+        """
+        try:
+            logging.info(f"Processing file: {file.parent}/{file.name}")
+            brain_network = from_matrix_to_network(file)
+
+            # Compute node-level metrics
+            closeness_centrality = metrics_computator.compute_closeness_centrality(brain_network)
+            clustering_coefficient = metrics_computator.compute_clustering_coefficients(brain_network)
+            degree_centrality = metrics_computator.compute_degree_centrality(brain_network)
+
+            # Region-level metrics
+            for region, subregions in self.roi.items():
+                ids = [sub["id"] for sub in subregions]
+
+                # Compute mean only for nodes present in the graph
+                closeness_vals = [closeness_centrality[i] for i in ids if i in closeness_centrality]
+                clustering_vals = [clustering_coefficient[i] for i in ids if i in clustering_coefficient]
+                degree_vals = [degree_centrality[i] for i in ids if i in degree_centrality]
+
+                # Append mean values to abide_roi_metrics
+                self.abide_roi_metrics[region]["closeness"].append(np.mean(closeness_vals))
+                self.abide_roi_metrics[region]["clustering"].append(np.mean(clustering_vals))
+                self.abide_roi_metrics[region]["degree"].append(np.mean(degree_vals))
+
+        except Exception as exc:
+            logging.error(f"Error processing file {file.parent}/{file.name}: {exc}")
+
+    def save_results(self):
+        """
+        Save metrics to CSV files.
+        """
+        metrics_dir = self.output_directory / "metrics"
+        create_directory(metrics_dir)
+        output_file = metrics_dir / "abide_roi_metrics.csv"
+        self.save_abide_roi_metrics(output_file)
+
+    def save_abide_roi_metrics(self, output_file):
+        """
+        Save region-level metrics to a CSV file.
+        """
+        data = []
+        for region, metrics in self.abide_roi_metrics.items():
+            num_subjects = len(metrics["closeness"])
+            for i in range(num_subjects):
+                data.append({
+                    "Subject": i + 1,
+                    "Region": region,
+                    "Closeness": metrics["closeness"][i],
+                    "Clustering": metrics["clustering"][i],
+                    "Degree": metrics["degree"][i]
+                })
+
+        df = pd.DataFrame(data)
+        df.to_csv(output_file, index=False)
+        logging.info(f"Saved ROI metrics to {output_file}")

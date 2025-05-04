@@ -1,0 +1,36 @@
+{
+  "Prefrontal Cortex": [
+    { "name": "Frontal_Sup_L", "id": 3 },
+    { "name": "Frontal_Sup_R", "id": 4 },
+    { "name": "Frontal_Mid_L", "id": 7 },
+    { "name": "Frontal_Mid_R", "id": 8 }
+  ],
+  "Insula": [
+    { "name": "Insula_L", "id": 29 },
+    { "name": "Insula_R", "id": 30 }
+  ],
+  "Cingulate Cortex": [
+    { "name": "Cingulum_Ant_L", "id": 31 },
+    { "name": "Cingulum_Ant_R", "id": 32 },
+    { "name": "Cingulum_Mid_L", "id": 33 },
+    { "name": "Cingulum_Mid_R", "id": 34 }
+  ],
+  "Hippocampus": [
+    { "name": "Hippocampus_L", "id": 37 },
+    { "name": "Hippocampus_R", "id": 38 }
+  ],
+  "Amygdala": [
+    { "name": "Amygdala_L", "id": 41 },
+    { "name": "Amygdala_R", "id": 42 }
+  ],
+  "Temporal Region": [
+    { "name": "Temporal_Sup_L", "id": 81 },
+    { "name": "Temporal_Sup_R", "id": 82 },
+    { "name": "Temporal_Mid_L", "id": 86 },
+    { "name": "Temporal_Mid_R", "id": 87 }
+  ],
+  "Cerebellum": [
+    { "name": "Cerebelm_Crus1_L", "id": 91 },
+    { "name": "Cerebelm_Crus1_R", "id": 92 }
+  ]
+}
