@@ -4,6 +4,7 @@ import logging
 import numpy as np
 import pandas as pd
 import json
+import re
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -33,10 +34,11 @@ class BrainMetricsExtractor:
     """
     Extracts region-level brain network metrics from .mat files and saves them to disk.
     """
-    def __init__(self, input_dir, output_dir, roi_file):
+    def __init__(self, input_dir, output_dir, roi_file, metadata_file):
         self.input_directory = Path(input_dir)
         self.output_directory = Path(output_dir)
         self.roi = self.load_roi(roi_file)
+        self.metadata = self.load_metadata(metadata_file)
         self.abide_roi_metrics = self.initialize_abide_roi_metrics()
 
     def load_roi(self, roi_file):
@@ -66,6 +68,30 @@ class BrainMetricsExtractor:
 
         except json.JSONDecodeError as exc:
             logging.error(f"Error decoding JSON file {roi_file}: {exc}")
+            raise
+
+    def load_metadata(self, metadata_file):
+        """
+        Load the metadata from a CSV file.
+
+        Parameters:
+            metadata_file (str or Path): Path to the CSV file containing metadata.
+
+        Returns:
+            dict: A dictionary mapping each subject to its age and sex.
+        """
+        try:
+            df = pd.read_csv(metadata_file)
+            df = df[df['Modality'] == 'fMRI']
+
+            metadata = {
+                str(row['Subject']): {'sex': row['Sex'], 'age': row['Age']}
+                for _, row in df.iterrows()
+            }
+
+            return metadata
+        except Exception as exc:
+            logging.error(f"Failed to load metadata: {exc}")
             raise
 
     def initialize_abide_roi_metrics(self):
@@ -113,6 +139,10 @@ class BrainMetricsExtractor:
             clustering_coefficient = metrics_computator.compute_clustering_coefficients(brain_network)
             degree_centrality = metrics_computator.compute_degree_centrality(brain_network)
 
+            match = re.search(r'(?:patient|control)(\d+)', file.name)
+            subject_id = match.group(1) if match else None
+            meta = self.metadata.get(subject_id, {'sex': 'NA', 'age': 'NA'})
+
             # Region-level metrics
             for region, subregions in self.roi.items():
                 ids = [sub["id"] for sub in subregions]
@@ -123,9 +153,9 @@ class BrainMetricsExtractor:
                 degree_vals = [degree_centrality[i] for i in ids if i in degree_centrality]
 
                 # Append mean values to abide_roi_metrics
-                self.abide_roi_metrics[region]["closeness"].append(np.mean(closeness_vals))
-                self.abide_roi_metrics[region]["clustering"].append(np.mean(clustering_vals))
-                self.abide_roi_metrics[region]["degree"].append(np.mean(degree_vals))
+                self.abide_roi_metrics[region]["closeness"].append((subject_id, meta, np.mean(closeness_vals)))
+                self.abide_roi_metrics[region]["clustering"].append((subject_id, meta, np.mean(clustering_vals)))
+                self.abide_roi_metrics[region]["degree"].append((subject_id, meta, np.mean(degree_vals)))
 
         except Exception as exc:
             logging.error(f"Error processing file {file.parent}/{file.name}: {exc}")
@@ -147,12 +177,18 @@ class BrainMetricsExtractor:
         for region, metrics in self.abide_roi_metrics.items():
             num_subjects = len(metrics["closeness"])
             for i in range(num_subjects):
+                subject_id, meta, closeness_val = metrics["closeness"][i]
+                _, _, clustering_val = metrics["clustering"][i]
+                _, _, degree_val = metrics["degree"][i]
+
                 data.append({
-                    "Subject": i + 1,
+                    "SubjectID": subject_id,
+                    "Sex": meta['sex'],
+                    "Age": meta['age'],
                     "Region": region,
-                    "Closeness": metrics["closeness"][i],
-                    "Clustering": metrics["clustering"][i],
-                    "Degree": metrics["degree"][i]
+                    "Closeness": closeness_val,
+                    "Clustering": clustering_val,
+                    "Degree": degree_val
                 })
 
         df = pd.DataFrame(data)

@@ -12,6 +12,7 @@ metadata = path / "dataset" / "metadata"
 abide_dir = path / "dataset" / "abide"
 analysis_dir = path / "analysis"
 roi_file = metadata / "roi.json"
+metadata_file = metadata / "ABIDE_metadata.csv"
 
 def organize_folders():
     """
@@ -41,7 +42,8 @@ def extract_all_metrics(input_dir, output_base_dir, roi_file):
                 extractor = BrainMetricsExtractor(
                     input_dir=group,
                     output_dir=output_path,
-                    roi_file=roi_file
+                    roi_file=roi_file,
+                    metadata_file=metadata_file
                 )
                 extractor.extract_metrics()
             else:
