@@ -3,7 +3,7 @@
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/Francescus02/LFN-Project
+git clone https://github.com/mattreturn1/AI_project.git
 ```
 
 2. Download the library required
