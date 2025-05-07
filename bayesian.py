@@ -138,3 +138,63 @@ else:
     print("\nParametri appresi (CPD):")
     for cpd in model.get_cpds():
         print(cpd)
+
+# --- FUNZIONI DI VISUALIZZAZIONE DELLA RETE BAYESIANA ---
+
+import networkx as nx
+import matplotlib.pyplot as plt
+
+def plot_bn_layered_multiline_sol1(model):
+    """
+    Soluzione 1 – Aumentata spaziatura orizzontale:
+      - Layer 1 (y=3): nodi fissi "Sex" e "AgeGroup"
+      - Layer 2 (y=2, 1, ...): nodi delle metriche disposti con spacing maggiore (circa 6.0)
+      - Layer 3 (y=min): il nodo "Diagnosis"
+    Dopo il posizionamento, i nodi fissi vengono centrati orizzontalmente.
+    """
+    G = nx.DiGraph()
+    G.add_nodes_from(model.nodes())
+    G.add_edges_from(model.edges())
+    
+    fixed_nodes_top = ["Sex", "AgeGroup"]
+    fixed_nodes_bottom = ["Diagnosis"]
+    metric_nodes = [n for n in G.nodes() if n not in fixed_nodes_top + fixed_nodes_bottom]
+    
+    pos = {}
+
+    y_top = 3
+    spacing_top = 6.0
+    for i, node in enumerate(sorted(fixed_nodes_top)):
+        pos[node] = (i * spacing_top, y_top)
+
+    chunk_size = 5
+    chunks = [metric_nodes[i:i+chunk_size] for i in range(0, len(metric_nodes), chunk_size)]
+    y_start = 2 
+    y_step = -0.8 
+    current_y = y_start
+    for chunk in chunks:
+       
+        spacing = 6.0
+        n_nodes = len(chunk)
+        
+        x_start = - ( (n_nodes - 1) * spacing ) / 2.0
+        for i, node in enumerate(sorted(chunk)):
+            pos[node] = (x_start + i * spacing, current_y)
+        current_y += y_step
+    
+    pos["Diagnosis"] = (0, current_y - 0.5)
+    
+    xs = [pt[0] for pt in pos.values()]
+    if xs:
+        x_mid = (min(xs) + max(xs)) / 2.0
+        pos = {node: (x - x_mid, y) for node, (x, y) in pos.items()}
+    
+    plt.figure(figsize=(16, 8))
+    nx.draw_networkx_nodes(G, pos, node_size=1000, node_color='lightblue')
+    nx.draw_networkx_edges(G, pos, arrowstyle='->', arrowsize=15, edge_color='gray')
+    nx.draw_networkx_labels(G, pos, font_size=10, font_weight='bold')
+    plt.title("Rete Bayesiana - Layered Multiline Soluzione 1 (spaziatura aumentata)")
+    plt.axis('off')
+    plt.show()
+
+plot_bn_layered_multiline_sol1(model)
