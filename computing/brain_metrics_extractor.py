@@ -1,9 +1,9 @@
 from computing import metrics_computator
 from pathlib import Path
 import logging
+import json
 import numpy as np
 import pandas as pd
-import json
 import re
 
 # Configure logging
@@ -147,7 +147,7 @@ class BrainMetricsExtractor:
             for region, subregions in self.roi.items():
                 ids = [sub["id"] for sub in subregions]
 
-                # Compute mean only for nodes present in the graph
+                # Compute mean only for relevant nodes in the graph
                 closeness_vals = [closeness_centrality[i] for i in ids if i in closeness_centrality]
                 clustering_vals = [clustering_coefficient[i] for i in ids if i in clustering_coefficient]
                 degree_vals = [degree_centrality[i] for i in ids if i in degree_centrality]

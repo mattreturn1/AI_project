@@ -1,7 +1,7 @@
-import logging
-from dataset import folders_organizer
 from computing.brain_metrics_extractor import BrainMetricsExtractor
+from dataset import folders_organizer
 from pathlib import Path
+import logging
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -24,7 +24,7 @@ def organize_folders():
     else:
         logging.info("ABIDE dataset folders are already organized.")
 
-def extract_all_metrics(input_dir, output_base_dir, roi_file):
+def extract_all_metrics(input_dir, output_base_dir, roi):
     """
     Extract metrics for each group and age category using BrainMetricsExtractor.
     """
@@ -42,8 +42,8 @@ def extract_all_metrics(input_dir, output_base_dir, roi_file):
                 extractor = BrainMetricsExtractor(
                     input_dir=group,
                     output_dir=output_path,
-                    roi_file=roi_file,
-                    metadata_file=metadata_file
+                    roi_file=roi,
+                    metadata_file=metadata
                 )
                 extractor.extract_metrics()
             else:

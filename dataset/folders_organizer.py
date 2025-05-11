@@ -1,7 +1,7 @@
-import shutil
 from pathlib import Path
-import pandas as pd
 import logging
+import pandas as pd
+import shutil
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -75,9 +75,13 @@ def find_folder_by_substring(substring, source):
         for item in source_path.iterdir():
             if item.is_dir() and substring in item.name:
                 return item
+
         logging.warning(f"Folder with substring '{substring}' not found in '{source}'.")
+        return None
     except Exception as exc:
         logging.error(f"Error searching for folder: {exc}")
+        return None
+
 
 def search_files_in_folder(folder_path):
     """
@@ -87,7 +91,10 @@ def search_files_in_folder(folder_path):
     for file in folder_path.rglob('*'):
         if 'AAL116_correlation_matrix' in file.name:
             return file
+
     logging.warning(f"File with substring 'AAL116_correlation_matrix' not found in '{folder_path}'.")
+    return None
+
 
 def get_age_group_abide(age):
     """

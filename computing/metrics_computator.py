@@ -1,8 +1,11 @@
-import numpy as np
-import networkx as nx
 from scipy.io import loadmat
+import logging
+import networkx as nx
+import numpy as np
 
-# Function to load and process correlation matrix
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 def load_and_process_matrix(file_path):
     """
     Load the correlation matrix, apply linear transformation, and normalize weights.
@@ -14,6 +17,7 @@ def load_and_process_matrix(file_path):
             matrix = data[key]
             break
     if matrix is None:
+        logging.error("Correlation matrix not found in the file.")
         raise ValueError("Correlation matrix not found in the file.")
 
     # Apply linear transformation: map [-1, 1] to [0, 1]
@@ -27,7 +31,7 @@ def load_and_process_matrix(file_path):
 
     return matrix_transformed
 
-# Function to create graph from a weighted adjacency matrix
+
 def create_weighted_graph(matrix):
     """
     Create a NetworkX graph from the weighted adjacency matrix.
@@ -35,7 +39,7 @@ def create_weighted_graph(matrix):
     graph = nx.from_numpy_array(matrix)
     return graph
 
-# Function to compute clustering coefficients
+
 def compute_clustering_coefficients(graph):
     """
     Compute the weighted clustering coefficients for all nodes.
@@ -43,7 +47,7 @@ def compute_clustering_coefficients(graph):
     clustering = nx.clustering(graph, weight='weight')
     return clustering
 
-# Function to compute closeness centrality
+
 def compute_closeness_centrality(graph):
     """
     Compute the closeness centrality for all nodes.
@@ -51,7 +55,7 @@ def compute_closeness_centrality(graph):
     closeness = nx.closeness_centrality(graph, distance='weight')
     return closeness
 
-# Function to compute degree centrality
+
 def compute_degree_centrality(graph):
     """
     Compute the degree centrality for all nodes.
