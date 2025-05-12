@@ -23,7 +23,7 @@ Move the renamed folder to the root folder of the project.
 ## Executing the code
 
 1. Calculate the metrics with `main.py`, which must be done before
-   the execution of the other programms.
+   the execution of the other programs.
 
-2. The use of Jupyter Notebook or equivalents is required to exetute
+2. The use of Jupyter Notebook or equivalents is required to execute
    `bayesian_network.ipynb` and `hidden_markov_model.ipynb`.
