@@ -27,3 +27,12 @@ Move the renamed folder to the root folder of the project.
 
 2. Then use Jupyter Notebook to execute
    `bayesian_network.ipynb` and `hidden_markov_model.ipynb`.
+
+## Dataset
+This project uses the dataset:
+
+Xu, Jiaxing; Yang, Yunhan; Huang, David; Gururajapathy, Sophi; Ke, Yiping; Qiao, Miao; et al. (2023).  
+A Collection of Brain Network Datasets. The University of Auckland. Dataset.  
+https://doi.org/10.17608/k6.auckland.21397377.v7  
+
+Licensed under [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
